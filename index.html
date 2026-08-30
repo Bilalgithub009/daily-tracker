@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ur">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Hub</title>
+    <style>
+        :root {
+            --bg: #0B0F0E;
+            --panel: #111716;
+            --panel-2: #161D1B;
+            --line: #24302C;
+            --text: #E7ECE9;
+            --text-dim: #8FA39B;
+            --text-faint: #566762;
+            --live: #4ADE80;
+            --live-dim: #163326;
+            --warn: #F5A623;
+            --warn-dim: #3A2A0C;
+            --off: #3A4642;
+            --red: #E2534A;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', ui-monospace, monospace;
+            padding: 20px 14px 60px;
+        }
+
+        .wrap {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+        }
+
+        .brand {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: var(--text-faint);
+            text-transform: uppercase;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .clock {
+            text-align: left;
+        }
+
+        .date {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .time {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--live);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            padding: 12px 14px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-faint);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .stat-value.live {
+            color: var(--live);
+        }
+
+        .stat-value.warn {
+            color: var(--warn);
+        }
+
+        .section-label {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            margin: 26px 0 10px 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-label.first {
+            margin-top: 6px;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .namaz-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .namaz-item {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            padding: 10px 6px;
+            text-align: center;
+        }
+
+        .namaz-name {
+            font-size: 11px;
+            color: var(--text-faint);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .namaz-time {
+            font-size: 13px;
+            color: var(--live);
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .namaz-note {
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+        }
+
+        .row.done {
+            border-color: var(--live-dim);
+            background: linear-gradient(0deg, rgba(74, 222, 128, 0.05), rgba(74, 222, 128, 0.05)), var(--panel);
+        }
+
+        .led {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            cursor: pointer;
+            border: 1px solid var(--off);
+            background: transparent;
+            transition: box-shadow .15s ease;
+        }
+
+        .led.on {
+            background: var(--live);
+            border-color: var(--live);
+            box-shadow: 0 0 8px 1px rgba(74, 222, 128, 0.6);
+        }
+
+        .row-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .row-name {
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .row.done .row-name {
+            color: var(--text-dim);
+            text-decoration: line-through;
+            text-decoration-color: var(--text-faint);
+        }
+
+        .streak {
+            display: flex;
+            gap: 3px;
+            margin-top: 6px;
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 1px;
+            background: var(--off);
+        }
+
+        .dot.hit {
+            background: var(--live);
+        }
+
+        .dot.today {
+            outline: 1px solid var(--text-faint);
+            outline-offset: 1px;
+        }
+
+        .row-streak-num {
+            font-size: 11px;
+            color: var(--text-faint);
+            white-space: nowrap;
+            text-align: right;
+            min-width: 44px;
+        }
+
+        .row-streak-num b {
+            color: var(--warn);
+            font-size: 13px;
+        }
+
+        .del {
+            background: transparent;
+            border: none;
+            color: var(--text-faint);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px 6px;
+            line-height: 1;
+        }
+
+        .del:hover {
+            color: var(--red);
+        }
+
+        .empty {
+            text-align: center;
+            color: var(--text-faint);
+            font-size: 13px;
+            padding: 24px 10px;
+            border: 1px dashed var(--line);
+            border-radius: 4px;
+        }
+
+        .add-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .add-form input {
+            flex: 1;
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 11px 12px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .add-form input:focus {
+            outline: none;
+            border-color: var(--live);
+        }
+
+        .add-form input::placeholder {
+            color: var(--text-faint);
+        }
+
+        .add-form button {
+            background: var(--live-dim);
+            border: 1px solid var(--live);
+            color: var(--live);
+            padding: 0 18px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .add-form button:active {
+            transform: scale(0.97);
+        }
+
+        .err {
+            color: var(--red);
+            font-size: 12px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .check {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            cursor: pointer;
+            border: 1px solid var(--off);
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .check.on {
+            background: var(--live);
+            border-color: var(--live);
+        }
+
+        .water-box {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            padding: 14px;
+        }
+
+        .water-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .water-count {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--live);
+        }
+
+        .water-target {
+            font-size: 12px;
+            color: var(--text-faint);
+        }
+
+        .cups {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .cup {
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            border: 1px solid var(--off);
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .cup.filled {
+            background: var(--live);
+            border-color: var(--live);
+        }
+
+        .water-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .water-btns button {
+            flex: 1;
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 9px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .water-btns button:active {
+            transform: scale(0.97);
+        }
+
+        .exp-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+
+        .exp-amt {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--warn);
+            min-width: 70px;
+        }
+
+        .exp-note {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .exp-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .exp-form input:first-child {
+            max-width: 100px;
+        }
+
+        .exp-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-faint);
+            margin-bottom: 10px;
+            padding: 0 2px;
+        }
+
+        .exp-total b {
+            color: var(--warn);
+            font-size: 15px;
+        }
+
+        .journal-box textarea {
+            width: 100%;
+            min-height: 100px;
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 12px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+        }
+
+        .journal-box textarea:focus {
+            outline: none;
+            border-color: var(--live);
+        }
+
+        .journal-save {
+            margin-top: 8px;
+            background: var(--live-dim);
+            border: 1px solid var(--live);
+            color: var(--live);
+            padding: 9px 18px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .journal-saved {
+            font-size: 11px;
+            color: var(--text-faint);
+            margin-top: 6px;
+            display: none;
+        }
+
+        .foot {
+            margin-top: 26px;
+            font-size: 11px;
+            color: var(--text-faint);
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+
+        <div class="topbar">
+            <div>
+                <div class="brand">System</div>
+                <div class="title">DAILY HUB</div>
+            </div>
+            <div class="clock">
+                <div class="date" id="dateOut">--</div>
+                <div class="time" id="timeOut">--:--</div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Aaj Complete</div>
+                <div class="stat-value live" id="statDone">0 / 0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Aaj Progress</div>
+                <div class="stat-value" id="statPct">0%</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Best Streak</div>
+                <div class="stat-value warn" id="statStreak">0</div>
+            </div>
+        </div>
+
+        <div class="section-label first">Aaj ke namaz waqt (Karachi)</div>
+        <div class="namaz-grid">
+            <div class="namaz-item">
+                <div class="namaz-name">Fajr</div>
+                <div class="namaz-time">4:54 AM</div>
+            </div>
+            <div class="namaz-item">
+                <div class="namaz-name">Zohar</div>
+                <div class="namaz-time">12:33 PM</div>
+            </div>
+            <div class="namaz-item">
+                <div class="namaz-name">Asr</div>
+                <div class="namaz-time">5:15 PM</div>
+            </div>
+            <div class="namaz-item">
+                <div class="namaz-name">Maghrib</div>
+                <div class="namaz-time">6:53 PM</div>
+            </div>
+            <div class="namaz-item">
+                <div class="namaz-name">Isha</div>
+                <div class="namaz-time">8:10 PM</div>
+            </div>
+        </div>
+        <div class="namaz-note">Ye 30 Aug 2026 ke timings hain, mahine ke saath thora shift hote hain.</div>
+
+        <div class="section-label">Roz ke habits</div>
+        <div id="taskList"></div>
+        <div class="empty" id="emptyState" style="display:none;">Koi habit nahi hai. Neeche add karein.</div>
+        <div class="add-form">
+            <input type="text" id="taskInput" placeholder="e.g. Exercise, padhai..." maxlength="60">
+            <button id="addBtn">ADD</button>
+        </div>
+        <div class="err" id="errMsg">Naam likhein.</div>
+
+        <div class="section-label">One-time to-do</div>
+        <div id="todoList"></div>
+        <div class="empty" id="todoEmpty" style="display:none;">Koi to-do nahi hai.</div>
+        <div class="add-form">
+            <input type="text" id="todoInput" placeholder="e.g. Bank jana, bill jama karna..." maxlength="80">
+            <button id="todoAddBtn">ADD</button>
+        </div>
+        <div class="err" id="todoErr">Naam likhein.</div>
+
+        <div class="section-label">Paani tracker</div>
+        <div class="water-box">
+            <div class="water-top">
+                <div><span class="water-count" id="waterCount">0</span> <span class="water-target">/ <span
+                            id="waterTarget">8</span> glasses</span></div>
+            </div>
+            <div class="cups" id="cupsRow"></div>
+            <div class="water-btns">
+                <button id="waterMinus">&minus; Glass</button>
+                <button id="waterPlus">+ Glass</button>
+            </div>
+        </div>
+
+        <div class="section-label">Aaj ka kharcha</div>
+        <div class="exp-total">Aaj total <b id="expTotal">Rs 0</b></div>
+        <div id="expList"></div>
+        <div class="empty" id="expEmpty" style="display:none;">Koi kharcha record nahi.</div>
+        <div class="exp-form">
+            <input type="number" id="expAmt" placeholder="Rs" min="0">
+            <input type="text" id="expNote" placeholder="e.g. Rickshaw, lunch...">
+            <button id="expAddBtn">ADD</button>
+        </div>
+        <div class="err" id="expErr">Amount aur note dono likhein.</div>
+
+        <div class="section-label">Aaj ki note</div>
+        <div class="journal-box">
+            <textarea id="journalText"
+                placeholder="Aaj ka din kaisa raha, khayalat, yaad rakhne wali baatein..."></textarea>
+            <button class="journal-save" id="journalSaveBtn">SAVE NOTE</button>
+            <div class="journal-saved" id="journalSaved">Save ho gaya.</div>
+        </div>
+
+        <div class="foot">Sab data yahin save hota hai — agli baar khole to sab wahi milega.</div>
+    </div>
+
+    <script>
+        /* ---------- shared date helpers ---------- */
+        function todayKey() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        function dateKeyOffset(offset) {
+            const d = new Date();
+            d.setDate(d.getDate() + offset);
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('dateOut').textContent = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+            document.getElementById('timeOut').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        }
+        updateClock();
+        setInterval(updateClock, 15000);
+
+        /* ---------- habit tracker ---------- */
+        let data = { tasks: [], logs: {} };
+        let loaded = false;
+
+        async function saveHabits() {
+            try { await window.storage.set('tasks-and-logs', JSON.stringify(data)); } catch (e) { console.error('save failed', e); }
+        }
+        async function loadHabits() {
+            let isFirstRun = false;
+            try {
+                const res = await window.storage.get('tasks-and-logs');
+                if (res && res.value) {
+                    data = JSON.parse(res.value);
+                    if (!data.tasks) data.tasks = [];
+                    if (!data.logs) data.logs = {};
+                }
+            } catch (e) { data = { tasks: [], logs: {} }; isFirstRun = true; }
+            if (isFirstRun && data.tasks.length === 0) {
+                ['Fajr Namaz', 'Zohar Namaz', 'Asr Namaz', 'Maghrib Namaz', 'Isha Namaz'].forEach((name, i) => {
+                    data.tasks.push({ id: 't' + Date.now() + i, name, createdAt: Date.now() });
+                });
+                await saveHabits();
+            }
+            loaded = true;
+            renderHabits();
+        }
+        function computeStreak(taskId) {
+            let streak = 0, offset = 0;
+            const doneToday = (data.logs[todayKey()] || []).includes(taskId);
+            if (!doneToday) offset = -1;
+            while (true) {
+                const key = dateKeyOffset(offset);
+                if ((data.logs[key] || []).includes(taskId)) { streak++; offset--; } else break;
+            }
+            return streak;
+        }
+        function last7(taskId) {
+            const arr = [];
+            for (let i = -6; i <= 0; i++) {
+                const key = dateKeyOffset(i);
+                arr.push({ hit: (data.logs[key] || []).includes(taskId), isToday: i === 0 });
+            }
+            return arr;
+        }
+        function toggleToday(taskId) {
+            const key = todayKey();
+            if (!data.logs[key]) data.logs[key] = [];
+            const idx = data.logs[key].indexOf(taskId);
+            if (idx >= 0) data.logs[key].splice(idx, 1); else data.logs[key].push(taskId);
+            saveHabits(); renderHabits();
+        }
+        function deleteHabit(taskId) {
+            data.tasks = data.tasks.filter(t => t.id !== taskId);
+            Object.keys(data.logs).forEach(k => { data.logs[k] = data.logs[k].filter(id => id !== taskId); });
+            saveHabits(); renderHabits();
+        }
+        function addHabit() {
+            const input = document.getElementById('taskInput');
+            const err = document.getElementById('errMsg');
+            const name = input.value.trim();
+            if (!name) { err.style.display = 'block'; return; }
+            err.style.display = 'none';
+            data.tasks.push({ id: 't' + Date.now() + Math.floor(Math.random() * 1000), name, createdAt: Date.now() });
+            input.value = '';
+            saveHabits(); renderHabits();
+        }
+        document.getElementById('addBtn').addEventListener('click', addHabit);
+        document.getElementById('taskInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addHabit();
+            document.getElementById('errMsg').style.display = 'none';
+        });
+        function renderHabits() {
+            if (!loaded) return;
+            const list = document.getElementById('taskList');
+            const empty = document.getElementById('emptyState');
+            const todayLog = data.logs[todayKey()] || [];
+            list.innerHTML = '';
+            if (data.tasks.length === 0) { empty.style.display = 'block'; }
+            else {
+                empty.style.display = 'none';
+                data.tasks.forEach(task => {
+                    const done = todayLog.includes(task.id);
+                    const streak = computeStreak(task.id);
+                    const days = last7(task.id);
+                    const row = document.createElement('div');
+                    row.className = 'row' + (done ? ' done' : '');
+                    const led = document.createElement('div');
+                    led.className = 'led' + (done ? ' on' : '');
+                    led.addEventListener('click', () => toggleToday(task.id));
+                    const main = document.createElement('div');
+                    main.className = 'row-main';
+                    const nameEl = document.createElement('div');
+                    nameEl.className = 'row-name'; nameEl.textContent = task.name;
+                    const streakRow = document.createElement('div');
+                    streakRow.className = 'streak';
+                    days.forEach(d => {
+                        const dot = document.createElement('div');
+                        dot.className = 'dot' + (d.hit ? ' hit' : '') + (d.isToday ? ' today' : '');
+                        streakRow.appendChild(dot);
+                    });
+                    main.appendChild(nameEl); main.appendChild(streakRow);
+                    const streakNum = document.createElement('div');
+                    streakNum.className = 'row-streak-num'; streakNum.innerHTML = '<b>' + streak + '</b> din';
+                    const del = document.createElement('button');
+                    del.className = 'del'; del.textContent = '\u00d7'; del.setAttribute('aria-label', 'Delete');
+                    del.addEventListener('click', () => deleteHabit(task.id));
+                    row.appendChild(led); row.appendChild(main); row.appendChild(streakNum); row.appendChild(del);
+                    list.appendChild(row);
+                });
+            }
+            const total = data.tasks.length;
+            const doneCount = data.tasks.filter(t => todayLog.includes(t.id)).length;
+            const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+            let bestStreak = 0;
+            data.tasks.forEach(t => { bestStreak = Math.max(bestStreak, computeStreak(t.id)); });
+            document.getElementById('statDone').textContent = doneCount + ' / ' + total;
+            document.getElementById('statPct').textContent = pct + '%';
+            document.getElementById('statStreak').textContent = bestStreak;
+        }
+
+        /* ---------- one-time to-do ---------- */
+        let todos = { items: [] };
+        async function saveTodos() { try { await window.storage.set('todos', JSON.stringify(todos)); } catch (e) { console.error(e); } }
+        async function loadTodos() {
+            try {
+                const res = await window.storage.get('todos');
+                if (res && res.value) { todos = JSON.parse(res.value); if (!todos.items) todos.items = []; }
+            } catch (e) { todos = { items: [] }; }
+            renderTodos();
+        }
+        function addTodo() {
+            const input = document.getElementById('todoInput');
+            const err = document.getElementById('todoErr');
+            const text = input.value.trim();
+            if (!text) { err.style.display = 'block'; return; }
+            err.style.display = 'none';
+            todos.items.push({ id: 'd' + Date.now() + Math.floor(Math.random() * 1000), text, done: false, createdAt: Date.now() });
+            input.value = '';
+            saveTodos(); renderTodos();
+        }
+        function toggleTodo(id) {
+            const t = todos.items.find(x => x.id === id);
+            if (t) t.done = !t.done;
+            saveTodos(); renderTodos();
+        }
+        function deleteTodo(id) {
+            todos.items = todos.items.filter(x => x.id !== id);
+            saveTodos(); renderTodos();
+        }
+        document.getElementById('todoAddBtn').addEventListener('click', addTodo);
+        document.getElementById('todoInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addTodo();
+            document.getElementById('todoErr').style.display = 'none';
+        });
+        function renderTodos() {
+            const list = document.getElementById('todoList');
+            const empty = document.getElementById('todoEmpty');
+            list.innerHTML = '';
+            if (todos.items.length === 0) { empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+            const sorted = [...todos.items].sort((a, b) => (a.done === b.done) ? 0 : (a.done ? 1 : -1));
+            sorted.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'row' + (item.done ? ' done' : '');
+                const chk = document.createElement('div');
+                chk.className = 'check' + (item.done ? ' on' : '');
+                chk.textContent = item.done ? '\u2713' : '';
+                chk.addEventListener('click', () => toggleTodo(item.id));
+                const main = document.createElement('div');
+                main.className = 'row-main';
+                const nameEl = document.createElement('div');
+                nameEl.className = 'row-name'; nameEl.textContent = item.text;
+                main.appendChild(nameEl);
+                const del = document.createElement('button');
+                del.className = 'del'; del.textContent = '\u00d7'; del.setAttribute('aria-label', 'Delete');
+                del.addEventListener('click', () => deleteTodo(item.id));
+                row.appendChild(chk); row.appendChild(main); row.appendChild(del);
+                list.appendChild(row);
+            });
+        }
+
+        /* ---------- water tracker ---------- */
+        let water = { logs: {}, target: 8 };
+        async function saveWater() { try { await window.storage.set('water', JSON.stringify(water)); } catch (e) { console.error(e); } }
+        async function loadWater() {
+            try {
+                const res = await window.storage.get('water');
+                if (res && res.value) { water = JSON.parse(res.value); if (!water.logs) water.logs = {}; if (!water.target) water.target = 8; }
+            } catch (e) { water = { logs: {}, target: 8 }; }
+            renderWater();
+        }
+        function changeWater(delta) {
+            const key = todayKey();
+            const cur = water.logs[key] || 0;
+            water.logs[key] = Math.max(0, cur + delta);
+            saveWater(); renderWater();
+        }
+        document.getElementById('waterPlus').addEventListener('click', () => changeWater(1));
+        document.getElementById('waterMinus').addEventListener('click', () => changeWater(-1));
+        function renderWater() {
+            const key = todayKey();
+            const count = water.logs[key] || 0;
+            document.getElementById('waterCount').textContent = count;
+            document.getElementById('waterTarget').textContent = water.target;
+            const cupsRow = document.getElementById('cupsRow');
+            cupsRow.innerHTML = '';
+            const total = Math.max(water.target, count);
+            for (let i = 0; i < total; i++) {
+                const cup = document.createElement('div');
+                cup.className = 'cup' + (i < count ? ' filled' : '');
+                cup.addEventListener('click', () => { water.logs[key] = i + 1; saveWater(); renderWater(); });
+                cupsRow.appendChild(cup);
+            }
+        }
+
+        /* ---------- expenses ---------- */
+        let expenses = { items: [] };
+        async function saveExpenses() { try { await window.storage.set('expenses', JSON.stringify(expenses)); } catch (e) { console.error(e); } }
+        async function loadExpenses() {
+            try {
+                const res = await window.storage.get('expenses');
+                if (res && res.value) { expenses = JSON.parse(res.value); if (!expenses.items) expenses.items = []; }
+            } catch (e) { expenses = { items: [] }; }
+            renderExpenses();
+        }
+        function addExpense() {
+            const amtInput = document.getElementById('expAmt');
+            const noteInput = document.getElementById('expNote');
+            const err = document.getElementById('expErr');
+            const amt = parseFloat(amtInput.value);
+            const note = noteInput.value.trim();
+            if (!amt || amt <= 0 || !note) { err.style.display = 'block'; return; }
+            err.style.display = 'none';
+            expenses.items.push({ id: 'e' + Date.now() + Math.floor(Math.random() * 1000), date: todayKey(), amount: Math.round(amt), note });
+            amtInput.value = ''; noteInput.value = '';
+            saveExpenses(); renderExpenses();
+        }
+        function deleteExpense(id) {
+            expenses.items = expenses.items.filter(x => x.id !== id);
+            saveExpenses(); renderExpenses();
+        }
+        document.getElementById('expAddBtn').addEventListener('click', addExpense);
+        document.getElementById('expNote').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addExpense();
+            document.getElementById('expErr').style.display = 'none';
+        });
+        function renderExpenses() {
+            const list = document.getElementById('expList');
+            const empty = document.getElementById('expEmpty');
+            const key = todayKey();
+            const todays = expenses.items.filter(x => x.date === key);
+            list.innerHTML = '';
+            if (todays.length === 0) { empty.style.display = 'block'; }
+            else {
+                empty.style.display = 'none';
+                todays.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'exp-row';
+                    const amt = document.createElement('div');
+                    amt.className = 'exp-amt'; amt.textContent = 'Rs ' + item.amount.toLocaleString();
+                    const note = document.createElement('div');
+                    note.className = 'exp-note'; note.textContent = item.note;
+                    const del = document.createElement('button');
+                    del.className = 'del'; del.textContent = '\u00d7'; del.setAttribute('aria-label', 'Delete');
+                    del.addEventListener('click', () => deleteExpense(item.id));
+                    row.appendChild(amt); row.appendChild(note); row.appendChild(del);
+                    list.appendChild(row);
+                });
+            }
+            const total = todays.reduce((s, x) => s + x.amount, 0);
+            document.getElementById('expTotal').textContent = 'Rs ' + total.toLocaleString();
+        }
+
+        /* ---------- journal ---------- */
+        let journal = { entries: {} };
+        async function saveJournal() { try { await window.storage.set('journal', JSON.stringify(journal)); } catch (e) { console.error(e); } }
+        async function loadJournal() {
+            try {
+                const res = await window.storage.get('journal');
+                if (res && res.value) { journal = JSON.parse(res.value); if (!journal.entries) journal.entries = {}; }
+            } catch (e) { journal = { entries: {} }; }
+            const key = todayKey();
+            document.getElementById('journalText').value = journal.entries[key] || '';
+        }
+        document.getElementById('journalSaveBtn').addEventListener('click', async () => {
+            const key = todayKey();
+            journal.entries[key] = document.getElementById('journalText').value;
+            await saveJournal();
+            const saved = document.getElementById('journalSaved');
+            saved.style.display = 'block';
+            setTimeout(() => { saved.style.display = 'none'; }, 2000);
+        });
+
+        /* ---------- init ---------- */
+        loadHabits();
+        loadTodos();
+        loadWater();
+        loadExpenses();
+        loadJournal();
+    </script>
+</body>
+
+</html>
